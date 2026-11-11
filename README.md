@@ -26,6 +26,9 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 | `review-changes` | model | Two-axis review of a diff: Standards and Spec |
 | `resolving-merge-conflicts` | model | Resolve a merge or rebase conflict by intent |
 | `ticket-sessions` | model | Capacity, start, signal and close for `orchestrate` and `dispatch` sessions |
+| `prototype` | model | Build a throwaway prototype to settle a state-model or UI question |
+| `diagnosing-bugs` | model | Diagnose a hard bug or regression from a red feedback loop |
+| `writing-for-agents` | model | Write skills, `AGENTS.md` and docs agents read |
 | `setup-matt-pocock-skills` | user | Write a repo's `docs/agents/` issue tracker, triage labels and domain docs |
 
 ## What a repo supplies
