@@ -1,0 +1,5 @@
+interface:
+  display_name: "Orchestrate"
+  short_description: "Run a spec's tickets in parallel and land them"
+policy:
+  allow_implicit_invocation: false

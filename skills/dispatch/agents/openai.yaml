@@ -1,0 +1,5 @@
+interface:
+  display_name: "Dispatch"
+  short_description: "Run triaged issues in parallel, each to its own pull request"
+policy:
+  allow_implicit_invocation: false

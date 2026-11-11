@@ -1,0 +1,3 @@
+interface:
+  display_name: "Ticket Sessions"
+  short_description: "Start and track parallel ticket sessions"
