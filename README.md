@@ -1,9 +1,44 @@
 # skills
 
-Agent skills shared across my repos. Install them into a repo with:
+Agent skills shared across my repos and harnesses. Each machine runs one checkout of this repo, linked into every
+harness's user-level skills folder, so a pushed change reaches every repo and worktree without touching them.
+
+## Install
 
 ```sh
-npx skills add jadfeitrouni/skills
+git clone https://github.com/jadfeitrouni/skills ~/repos/skills
+~/repos/skills/install.sh
+```
+
+`install.sh` links each skill into `~/.claude/skills` (Claude Code, OpenCode) and `~/.agents/skills` (OpenCode,
+Codex). Edits to the checkout are live at once. It leaves alone anything there it did not link, and removes its links
+to skills that no longer exist. `SKILLS_HOME` moves the checkout.
+
+To pick up pushed changes, run `install.sh --pull` on a schedule. It skips the pull when the checkout has local
+changes or the network fails:
+
+```sh
+*/10 * * * * $HOME/repos/skills/install.sh --pull >/dev/null 2>&1
+```
+
+A cloud session starts from nothing, so a repo that runs Claude Code on the web installs the skills from a
+SessionStart hook in its committed `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$CLAUDE_CODE_REMOTE\" = true ] || exit 0; [ -d ~/repos/skills ] || git clone -q https://github.com/jadfeitrouni/skills ~/repos/skills; sh ~/repos/skills/install.sh || true"
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 The skills hold no repo specifics. Each repo supplies those through its own `AGENTS.md` and `docs/agents/`.
