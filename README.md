@@ -50,5 +50,25 @@ another terminal tool replaces those two files and nothing else.
 
 ## Credits
 
-Most of these skills began as [mattpocock/skills](https://github.com/mattpocock/skills), under its MIT license.
-`orchestrate`, `dispatch`, `implement`, `review-changes` and `ticket-sessions` are my own or rewritten.
+Most of these skills are Matt Pocock's, from [mattpocock/skills](https://github.com/mattpocock/skills), used under
+its MIT license. They were taken from the versions installed in August 2026, so they may lag his repo.
+
+| Skill | From mattpocock/skills | Here |
+| --- | --- | --- |
+| `grill-me` | `skills/productivity/grill-me` | unchanged |
+| `grilling` | `skills/productivity/grilling` | unchanged |
+| `writing-for-agents` | `skills/productivity/writing-for-agents` | unchanged |
+| `to-spec` | `skills/engineering/to-spec` | unchanged |
+| `to-tickets` | `skills/engineering/to-tickets` | unchanged |
+| `triage` | `skills/engineering/triage` | unchanged |
+| `tdd` | `skills/engineering/tdd` | points at `review-changes` |
+| `domain-modeling` | `skills/engineering/domain-modeling` | unchanged |
+| `codebase-design` | `skills/engineering/codebase-design` | unchanged |
+| `prototype` | `skills/engineering/prototype` | unchanged |
+| `diagnosing-bugs` | `skills/engineering/diagnosing-bugs` | unchanged |
+| `setup-matt-pocock-skills` | `skills/engineering/setup-matt-pocock-skills` | unchanged |
+| `resolving-merge-conflicts` | `skills/engineering/resolving-merge-conflicts`, since removed upstream | unchanged |
+| `review-changes` | `skills/engineering/code-review` | renamed; reviews uncommitted work too |
+| `implement` | `skills/engineering/implement` | reviews before committing; verifies as `AGENTS.md` says |
+
+`orchestrate`, `dispatch` and `ticket-sessions` are mine.
