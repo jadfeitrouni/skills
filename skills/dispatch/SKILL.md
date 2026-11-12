@@ -35,6 +35,10 @@ workspace.
   An assignee means someone, usually the user, is doing it by hand.
 - **Low-risk**: the `low-risk` label, set at triage against the rule in `docs/agents/triage-labels.md`.
 - **Branch**: issue `<n>` builds on `dispatch/<n>`, cut from the default branch.
+- **Update the default branch**: `git fetch origin`, then fast-forward the local default branch to
+  `origin/<default branch>`. Where a worktree has it checked out (`git worktree list --porcelain`), run
+  `git -C <that worktree> merge --ff-only origin/<default branch>` there; with none, run
+  `git fetch origin <default branch>:<default branch>`.
 - **In progress**: an issue with the `in-progress` label, from launch until its pull request opens. The label is the
   record every machine and the user can see. Its session is `<repo>-t<n>` on the machine that launched it.
 - **Capacity**: always check it with `--ci`, since every ticket here opens a ready pull request.
@@ -69,13 +73,15 @@ Done when you are `<repo>-dispatch` and you know every issue in progress.
 
 ## 2. Fill the free slots
 
-1. Run the capacity check and read the queue.
-2. For each free slot, take the next issue in the queue:
+1. Update the default branch, so each branch starts from every pull request merged so far. If it cannot fast-forward,
+   tell the user why and launch nothing.
+2. Run the capacity check and read the queue.
+3. For each free slot, take the next issue in the queue:
    1. Claim it first: `gh issue edit <n> --add-label in-progress`.
    2. Start its session on branch `dispatch/<n>` from the default branch, with the ticket session prompt. If it fails
       to start, remove the `in-progress` label again and tell the user why.
-3. Tell the user, one line per issue, what you launched and whether it is `low-risk`.
-4. If the queue still holds issues but no slot is free, run the capacity check with `--wait` as a background task.
+4. Tell the user, one line per issue, what you launched and whether it is `low-risk`.
+5. If the queue still holds issues but no slot is free, run the capacity check with `--wait` as a background task.
    If the queue is empty and nothing is in progress, tell the user the queue is done.
 
 Then end your turn and wait: the ticket sessions' signals, the background capacity check and the user wake you.
