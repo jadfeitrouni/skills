@@ -81,7 +81,31 @@ If the spec is missing, skip the Spec sub-agent and note this in the final repor
 
 Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings — the two axes are deliberately separate (see _Why two axes_).
 
+Number the findings S1, S2… under Standards and P1, P2… under Spec, and mark each one's **kind**: **Hard** for a Spec
+finding or a Standards finding its sub-agent called a hard violation, **Judgement** for every judgement call.
+
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes — that's the reranking the separation exists to prevent.
+
+### 6. Act on the findings
+
+When the findings are acted on, by you or by the skill that ran this review, their kind decides what happens:
+
+- **Hard**: fix it. When the finding is wrong, the reviewer having misread the code or the spec, mark it **Disputed**
+  and quote the code or spec line that contradicts it, for the user to decide.
+- **Judgement**: leave the code as it is and mark it **Proposed**, with the fix you would make and what that fix
+  would add: new types, files or layers, and the call sites it touches. Fix it only once the user picks it.
+
+Then report every finding as one table, a row each, in review order:
+
+| # | Kind | Finding | Outcome |
+|---|---|---|---|
+| S1 | Hard | `orders/api.ts` types the response as `any`, which `CODING_STANDARDS.md` forbids. | Fixed: typed as `OrderResponse`. |
+| S2 | Judgement | `price`, `currency` and `taxRate` travel together through four functions in `checkout/` (Data Clumps). | Proposed: a `Money` type. Adds one type and changes four signatures. |
+| P1 | Hard | The spec rejects refunds after 30 days; `refunds.ts` accepts them. | Fixed: `refunds.ts` rejects them. |
+
+Write each finding so someone who has seen neither the diff nor the review can decide on it: what is wrong, where
+(file and function), and why it matters. Name the code rather than quoting it. Each outcome starts with **Fixed**,
+saying what changed, **Disputed** or **Proposed**.
 
 ## Why two axes
 
