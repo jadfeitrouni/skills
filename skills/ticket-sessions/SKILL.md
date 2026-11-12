@@ -12,13 +12,15 @@ need, is in `docs/agents/ticket-sessions.md`; a section that file lacks needs no
 ## Operations
 
 - **Inside the terminal tool**: `HERDR_ENV` is `1`.
+- **Repo name** `<repo>`: `gh repo view --json name --jq .name`. Every session name starts with it, since sessions
+  from several repos share one Herdr.
 - **Name yourself `<name>`**: `herdr agent rename "$HERDR_PANE_ID" <name>`. Herdr drops the name when the process
   exits, so name yourself on every start.
-- **List sessions**: `herdr agent list`. Ticket `<n>`'s session is the agent `t<n>`.
-- **Read a session's state**: `herdr agent get t<n>`.
+- **List sessions**: `herdr agent list`. Ticket `<n>`'s session is the agent `<repo>-t<n>`.
+- **Read a session's state**: `herdr agent get <repo>-t<n>`.
 - **Signal command** to agent `<to>` with `<message>`: `herdr agent prompt <to> "<message>"`. A ticket session's
   prompt carries it written out in full, since the session never loads this skill.
-- **Prompt a session**: the signal command with `t<n>` as `<to>`.
+- **Prompt a session**: the signal command with `<repo>-t<n>` as `<to>`.
 
 ## Capacity
 
@@ -52,9 +54,9 @@ To start ticket `<n>` on branch `<branch>`, cut from `<base>`, with prompt `<pro
    ask the user to run `! wt config approvals add`, then resume.
 2. Find the worktree's path in `git worktree list --porcelain`, then wait until it is ready as "Worktree ready" in
    `docs/agents/ticket-sessions.md` describes.
-3. `herdr workspace create --cwd <path> --label "#<n>" --no-focus`, with one `--env <NAME>=<value>` for each variable
-   under "Session environment" in `docs/agents/ticket-sessions.md`. The pane is `.result.root_pane.pane_id`.
-4. `herdr agent start t<n> --kind claude --pane <pane>`, then prompt the session with `<prompt>`.
+3. `herdr workspace create --cwd <path> --label "<repo> #<n>" --no-focus`, with one `--env <NAME>=<value>` for each
+   variable under "Session environment" in `docs/agents/ticket-sessions.md`. The pane is `.result.root_pane.pane_id`.
+4. `herdr agent start <repo>-t<n> --kind claude --pane <pane>`, then prompt the session with `<prompt>`.
 
 ## Closing a session
 

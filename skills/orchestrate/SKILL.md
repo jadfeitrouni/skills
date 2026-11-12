@@ -31,9 +31,10 @@ workspace.
      ``git log --reverse --format='- `%h` %s' <range>``, then "It stays open until the branch merges into
      `<default branch>`."
   3. Add `Closes #<n>` to the pull request's body with `gh pr edit <integration> --body-file`.
-- **In flight**: a ticket whose `<integration>-<n>` worktree exists (`git worktree list`). Its session is `t<n>`.
+- **In flight**: a ticket whose `<integration>-<n>` worktree exists (`git worktree list`). Its session is
+  `<repo>-t<n>`.
 - **Frontier**: every open ticket neither landed nor in flight whose blockers have all landed or are closed.
-- **Ticket session prompt**, `<signal>` being the signal command to `orch` with `#<n> approved`, written out:
+- **Ticket session prompt**, `<signal>` being the signal command to `<repo>-orch` with `#<n> approved`, written out:
   - by default: `/implement #<n>. Commit on this branch only; pushing, merging and pull requests are mine. Once the
     user replies "approved", run exactly: <signal>`
   - for a ticket in `autoLand`: the same, ending `Once the work is committed, run exactly: <signal>`
@@ -43,7 +44,8 @@ workspace.
 ## 1. Start
 
 1. Check you are inside the terminal tool; outside it, say so and stop.
-2. Name yourself `orch`.
+2. If list sessions shows a `<repo>-orch` agent, another orchestrator already runs in this repo: tell the user and
+   stop. Otherwise, name yourself `<repo>-orch`.
 3. Check the integration branch (see Reference) and that `git status --porcelain --untracked-files=no` is empty, and
    make the checks for before the first session.
 4. Read the state file, or create it with `parent` and `integration` set and `autoLand` empty.
@@ -51,11 +53,11 @@ workspace.
    `git push -u origin <integration>`. If it has no pull request yet, open one as a draft:
    `gh pr create --draft --base <default branch>`, its title as `AGENTS.md` describes, its body the parent's goal.
 6. Ask the user whether any tickets landed before this run without the `landed` label, and mark each one landed.
-7. List the in-flight tickets and check each has its `t<n>` session (list sessions). Report one with no session to
-   the user rather than relaunching it.
+7. List the in-flight tickets and check each has its `<repo>-t<n>` session (list sessions). Report one with no
+   session to the user rather than relaunching it.
 
-Done when you are `orch`, the state file is current, the draft pull request holds the pushed integration branch, and
-you know every ticket in flight.
+Done when you are `<repo>-orch`, the state file is current, the draft pull request holds the pushed integration
+branch, and you know every ticket in flight.
 
 ## 2. Read the tickets
 
@@ -91,13 +93,13 @@ On `#<n> approved`, from a ticket session or the user:
 2. If the integration branch has moved since the ticket started
    (`git merge-base --is-ancestor <integration> <integration>-<n>` fails), rebase:
    `git -C <path> rebase <integration>`.
-   - On a conflict, `git -C <path> rebase --abort` and prompt `t<n>`: "Rebase this branch onto `<integration>`,
-     resolving the conflicts with /resolving-merge-conflicts and the rules under "Rebasing a ticket branch" in
-     `docs/agents/ticket-sessions.md`, if any. Then run the verify command `AGENTS.md` names, and wait for the user's
-     review." Then wait for the next approval.
+   - On a conflict, `git -C <path> rebase --abort` and prompt `<repo>-t<n>`: "Rebase this branch onto
+     `<integration>`, resolving the conflicts with /resolving-merge-conflicts and the rules under "Rebasing a ticket
+     branch" in `docs/agents/ticket-sessions.md`, if any. Then run the verify command `AGENTS.md` names, and wait for
+     the user's review." Then wait for the next approval.
    - After a clean rebase, run the verify command `AGENTS.md` names in `<path>`, with ticket `<n>`'s session
-     environment set, so it takes turns with the ticket sessions. If it fails, prompt `t<n>` with its summary and the
-     log's path, asking for a fix and a fresh review, and wait for the next approval.
+     environment set, so it takes turns with the ticket sessions. If it fails, prompt `<repo>-t<n>` with its summary
+     and the log's path, asking for a fix and a fresh review, and wait for the next approval.
 
    Without a rebase, the ticket session's own verify run covers the branch, so run none here. If step 4's push is
    refused, tell the user why and wait.

@@ -36,9 +36,10 @@ function readConfig() {
   return { ...DEFAULTS, ...(existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {}) };
 }
 
+// Ticket sessions are named <repo>-t<n>; every repo's count against this machine's limit.
 function runningTicketSessions() {
   const { agents } = JSON.parse(run("herdr", ["agent", "list"])).result;
-  return agents.filter((agent) => /^t\d+$/.test(agent.name ?? "")).length;
+  return agents.filter((agent) => /-t\d+$/.test(agent.name ?? "")).length;
 }
 
 // MemAvailable counts reclaimable cache; macOS has no equivalent that a script can read cheaply, so it goes unchecked
