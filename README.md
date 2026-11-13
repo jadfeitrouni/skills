@@ -64,13 +64,15 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 | `prototype` | model | Build a throwaway prototype to settle a state-model or UI question |
 | `diagnosing-bugs` | model | Diagnose a hard bug or regression from a red feedback loop |
 | `writing-for-agents` | model | Write skills, `AGENTS.md` and docs agents read |
-| `setup-matt-pocock-skills` | user | Write a repo's `docs/agents/` issue tracker, triage labels and domain docs |
+| `setup-matt-pocock-skills` | user | Write a repo's `docs/agents/` issue tracker, triage labels, low-risk rule and domain docs |
 
 ## What a repo supplies
 
 - `AGENTS.md` names the **verify command** that must pass before work counts as done, the **protected branches**, and
   which branches CI runs on and whether it skips drafts.
 - `docs/agents/issue-tracker.md`, `triage-labels.md` and `domain.md`: run `/setup-matt-pocock-skills` to write them.
+  For `dispatch`, `triage-labels.md` also holds the **low-risk rule**: what an issue's change must not touch for its
+  pull request to open without the maintainer's review. Without it, every issue waits for that review.
 - `docs/agents/ticket-sessions.md`, for `orchestrate` and `dispatch` only. Each section is optional:
   - **Before starting sessions**: checks the dispatcher makes before launching anything.
   - **Worktree ready**: what to wait for after worktrunk creates a worktree.
