@@ -55,7 +55,7 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 | `orchestrate` | user | Run a spec's tickets in parallel sessions and land them on an integration branch |
 | `dispatch` | user | Run triaged standalone issues in parallel sessions, each to its own pull request |
 | `grilling` | model | The interview primitive behind `grill-me` and `triage` |
-| `domain-modeling` | model | Keep `CONTEXT.md` and ADRs current |
+| `domain-modeling` | model | Keep `GLOSSARY.md` and ADRs current |
 | `codebase-design` | model | Deep-module vocabulary, used by `tdd` |
 | `tdd` | model | Red-green-refactor at agreed seams |
 | `review-changes` | model | Two-axis review of a diff: Standards and Spec |
@@ -88,7 +88,7 @@ another terminal tool replaces those two files and nothing else.
 ## Credits
 
 Most of these skills are Matt Pocock's, from [mattpocock/skills](https://github.com/mattpocock/skills), used under
-its MIT license. They were taken from the versions installed in August 2026, so they may lag his repo.
+its MIT license. They were last synced with his repo at `5863806` (12 November 2026), so they may lag it.
 
 | Skill | From mattpocock/skills | Here |
 | --- | --- | --- |
@@ -97,15 +97,15 @@ its MIT license. They were taken from the versions installed in August 2026, so 
 | `writing-for-agents` | `skills/productivity/writing-for-agents` | unchanged |
 | `to-spec` | `skills/engineering/to-spec` | unchanged |
 | `to-tickets` | `skills/engineering/to-tickets` | unchanged |
-| `triage` | `skills/engineering/triage` | unchanged |
+| `triage` | `skills/engineering/triage` | makes the low-risk call |
 | `tdd` | `skills/engineering/tdd` | points at `review-changes` |
 | `domain-modeling` | `skills/engineering/domain-modeling` | unchanged |
 | `codebase-design` | `skills/engineering/codebase-design` | unchanged |
 | `prototype` | `skills/engineering/prototype` | unchanged |
 | `diagnosing-bugs` | `skills/engineering/diagnosing-bugs` | unchanged |
-| `setup-matt-pocock-skills` | `skills/engineering/setup-matt-pocock-skills` | unchanged |
+| `setup-matt-pocock-skills` | `skills/engineering/setup-matt-pocock-skills` | writes the low-risk rule |
 | `resolving-merge-conflicts` | `skills/engineering/resolving-merge-conflicts`, since removed upstream | unchanged |
-| `review-changes` | `skills/engineering/code-review` | renamed; reviews uncommitted work too |
-| `implement` | `skills/engineering/implement` | reviews before committing; verifies as `AGENTS.md` says |
+| `review-changes` | `skills/engineering/code-review` | renamed; reviews uncommitted work too; hard checks, finding kinds and an outcome table |
+| `implement` | `skills/engineering/implement` | campsite rule; reviews before committing and acts on the findings by kind; verifies as `AGENTS.md` says |
 
 `orchestrate`, `dispatch` and `ticket-sessions` are mine.

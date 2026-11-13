@@ -6,7 +6,8 @@ disable-model-invocation: true
 
 Implement the work described by the user in the spec or tickets, in these steps:
 
-1. Record the starting commit: `git rev-parse HEAD`.
+1. If the user passes a ticket reference, fetch it from the issue tracker and state its title; if the reference is
+   ambiguous, ask. Record the starting commit: `git rev-parse HEAD`.
 2. Build the work, using /tdd where possible at pre-agreed seams. Run typechecking and single test files regularly.
    - Build the simplest thing that could possibly work: every new module, type or layer passes the deletion test in
      `/codebase-design`.

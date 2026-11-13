@@ -5,10 +5,10 @@ description: Review the changes since a fixed point (commit, branch, tag, or mer
 
 Two-axis review of the diff between the working tree and a fixed point the user supplies:
 
-- **Standards** — does the code conform to this repo's documented coding standards?
-- **Spec** — does the code faithfully implement the originating issue / spec?
+- **Standards**: does the code conform to this repo's documented coding standards?
+- **Spec**: does the code faithfully implement the originating issue / spec?
 
-Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
+Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings. Start every sub-agent with a fresh context window.
 
 The issue tracker should have been provided to you — run `/setup-matt-pocock-skills` if `docs/agents/issue-tracker.md` is missing.
 
@@ -16,7 +16,7 @@ The issue tracker should have been provided to you — run `/setup-matt-pocock-s
 
 ### 1. Pin the fixed point
 
-Whatever the user said is the fixed point — a commit SHA, branch name, tag, `main`, `HEAD~5`, etc. If they didn't specify one, ask for it.
+Whatever the user said is the fixed point (a commit SHA, branch name, tag, `main`, `HEAD~5`, etc.). If they didn't specify one, ask for it.
 
 Capture the diff command once: `git diff $(git merge-base <fixed-point> HEAD)`, against the merge-base and through to
 the working tree, so work not yet committed is reviewed alongside the commits. The diff cannot show new files: list
@@ -39,12 +39,12 @@ Fetch an issue via the workflow in `docs/agents/issue-tracker.md`.
 
 ### 3. Identify the standards sources
 
-Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
+Search the repo for every file that documents how code should be written. When `CODING_STANDARDS.md` or `CONTRIBUTING.md` exists, it must be on the list.
 
-On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below — a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
+On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 
 - **The repo overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.
-- **Always a judgement call.** Each smell is a labelled heuristic ("possible Feature Envy"), never a hard violation — and, like any standard here, skip anything tooling already enforces.
+- **Always a judgement call.** Each smell is a labelled heuristic ("possible Feature Envy"), never a hard violation. Like any standard here, skip anything tooling already enforces.
 
 Each smell reads *what it is* → *how to fix*; match it against the diff:
 
@@ -73,13 +73,15 @@ failure is a hard violation, whatever the repo documents:
 
 ### 4. Spawn both sub-agents in parallel
 
-**Standards sub-agent prompt** — include:
+Issue both sub-agent calls together, in the foreground, and aggregate the reports they return.
+
+**Standards sub-agent prompt** should include:
 
 - The full diff command, the new-file list and the commit list.
 - The list of standards-source files you found in step 3, **plus the smell baseline and the hard checks from step 3** pasted in full — the sub-agent has no other access to them.
 - The brief: "Report — per file/hunk where relevant — (a) every place the diff violates a documented standard: cite the standard (file + the rule); (b) any baseline smell you spot: name it and quote the hunk; and (c) every hard check that fails, with its evidence, as a hard violation. Distinguish hard violations from judgement calls — documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Apart from the hard checks, skip anything tooling enforces. Under 400 words."
 
-**Spec sub-agent prompt** — include:
+**Spec sub-agent prompt** should include:
 
 - The diff command, the new-file list and the commit list.
 - The path or fetched contents of the spec.
@@ -89,7 +91,7 @@ If the spec is missing, skip the Spec sub-agent and note this in the final repor
 
 ### 5. Aggregate
 
-Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings — the two axes are deliberately separate (see _Why two axes_).
+Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
 
 Number the findings S1, S2… under Standards and P1, P2… under Spec, and mark each one's **kind**: **Hard** for a Spec
 finding or a Standards finding its sub-agent called a hard violation, **Judgement** for every judgement call.
