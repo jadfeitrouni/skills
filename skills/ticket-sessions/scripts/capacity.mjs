@@ -10,6 +10,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { detect } from "./term.mjs";
 
 const DEFAULTS = { maxAgents: 3, minFreeGiB: 6, ciCap: 4 };
 const RECHECK_MS = 5 * 60 * 1000;
@@ -21,6 +22,11 @@ const ciBranches = args
   ?.slice("--ci=".length)
   .split(",")
   .filter(Boolean);
+const terminal = detect();
+if (!terminal) {
+  console.error("not inside Herdr, the Herdr app or Rex");
+  process.exit(1);
+}
 if (args.includes("--ci") || ciBranches?.length === 0) {
   console.error("--ci needs the branches CI runs on, as --ci=<branch>,<branch>");
   process.exit(1);
@@ -38,8 +44,7 @@ function readConfig() {
 
 // Ticket sessions are named <repo>-t<n>; every repo's count against this machine's limit.
 function runningTicketSessions() {
-  const { agents } = JSON.parse(run("herdr", ["agent", "list"])).result;
-  return agents.filter((agent) => /-t\d+$/.test(agent.name ?? "")).length;
+  return terminal.list().filter(({ name }) => /-t\d+$/.test(name)).length;
 }
 
 // MemAvailable counts reclaimable cache; macOS has no equivalent that a script can read cheaply, so it goes unchecked

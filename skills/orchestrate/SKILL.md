@@ -53,7 +53,7 @@ workspace.
 ## 1. Start
 
 1. Check you are inside the terminal tool; outside it, say so and stop.
-2. If list sessions shows a `<repo>-orch` agent, another orchestrator already runs in this repo: tell the user and
+2. If list sessions shows a `<repo>-orch` session, another orchestrator already runs in this repo: tell the user and
    stop. Otherwise, name yourself `<repo>-orch`.
 3. Check the integration branch (see Reference) and that `git status --porcelain --untracked-files=no` is empty, and
    make the checks for before the first session.

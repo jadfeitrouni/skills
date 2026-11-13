@@ -1,25 +1,28 @@
 ---
 name: ticket-sessions
-description: Ticket sessions, the parallel Claude sessions /orchestrate and /dispatch run, one per ticket in its own worktree and Herdr workspace. Use to check capacity for one, or to start, read, prompt or close one.
+description: Ticket sessions, the parallel Claude sessions /orchestrate and /dispatch run, one per ticket in its own worktree and terminal workspace. Use to check capacity for one, or to start, read, prompt or close one.
 user-invocable: false
 ---
 
 `/orchestrate` and `/dispatch` each hand a ticket to its own Claude session, a **ticket session**. This skill is the
-part they share and the only one that names the terminal tool, Herdr: how much a machine can run at once, how a session
-starts and closes, and how sessions signal each other. The repo's part, what a new worktree and a session's checks
-need, is in `docs/agents/ticket-sessions.md`; a section that file lacks needs nothing.
+part they share: how much a machine can run at once, how a session starts and closes, and how sessions signal each
+other. The repo's part, what a new worktree and a session's checks need, is in `docs/agents/ticket-sessions.md`; a
+section that file lacks needs nothing.
 
 ## Operations
 
-- **Inside the terminal tool**: `HERDR_ENV` is `1`.
+Every operation runs `node <this skill's directory>/scripts/term.mjs`, written `term` below. It drives the **terminal
+tool** this session runs inside: Herdr, the Herdr app or Rex. A session it starts runs in the same tool.
+
+- **Inside the terminal tool**: `term inside` succeeds and names the tool.
 - **Repo name** `<repo>`: `gh repo view --json name --jq .name`. Every session name starts with it, since sessions
-  from several repos share one Herdr.
-- **Name yourself `<name>`**: `herdr agent rename "$HERDR_PANE_ID" <name>`. Herdr drops the name when the process
-  exits, so name yourself on every start.
-- **List sessions**: `herdr agent list`. Ticket `<n>`'s session is the agent `<repo>-t<n>`.
-- **Read a session's state**: `herdr agent get <repo>-t<n>`.
-- **Signal command** to agent `<to>` with `<message>`: `herdr agent prompt <to> "<message>"`. A ticket session's
-  prompt carries it written out in full, since the session never loads this skill.
+  from several repos share one terminal tool.
+- **Name yourself `<name>`**: `term name <name>`. Some tools drop the name when Claude exits, so name yourself on
+  every start.
+- **List sessions**: `term list`, each running Claude session with its name and state. Ticket `<n>`'s session is `<repo>-t<n>`.
+- **Read a session's state**: `term state <repo>-t<n>`: `working`, `blocked`, `idle`, `done` or `unknown`.
+- **Signal command** to session `<to>` with `<message>`: `node <absolute path of term.mjs> send <to> "<message>"`. A
+  ticket session's prompt carries it written out in full, since the session never loads this skill.
 - **Prompt a session**: the signal command with `<repo>-t<n>` as `<to>`.
 
 ## Capacity
@@ -54,12 +57,12 @@ To start ticket `<n>` on branch `<branch>`, cut from `<base>`, with prompt `<pro
    ask the user to run `! wt config approvals add`, then resume.
 2. Find the worktree's path in `git worktree list --porcelain`, then wait until it is ready as "Worktree ready" in
    `docs/agents/ticket-sessions.md` describes.
-3. `herdr workspace create --cwd <path> --label "<repo> #<n>" --no-focus`, with one `--env <NAME>=<value>` for each
-   variable under "Session environment" in `docs/agents/ticket-sessions.md`. The pane is `.result.root_pane.pane_id`.
-4. `herdr agent start <repo>-t<n> --kind claude --pane <pane>`, then prompt the session with `<prompt>`.
+3. `term start <repo>-t<n> --cwd <path> --label "<repo> #<n>" -- "<prompt>"`, with one `--env <NAME>=<value>` before
+   the `--` for each variable under "Session environment" in `docs/agents/ticket-sessions.md`. It starts Claude in a
+   new workspace that doesn't take focus, names the session and gives it `<prompt>`.
 
 ## Closing a session
 
-The session is still running inside its worktree, so in this order: `herdr workspace close` the session's workspace
-(reading its state names it), then `wt remove <branch> < /dev/null`. worktrunk judges merges against the default
+The session is still running inside its worktree, so in this order: `term close <repo>-t<n>`, which closes its
+workspace too, then `wt remove <branch> < /dev/null`. worktrunk judges merges against the default
 branch, so it keeps a branch not merged there.

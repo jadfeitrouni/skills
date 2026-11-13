@@ -84,9 +84,10 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 
 ## Tools
 
-`orchestrate` and `dispatch` run each ticket in its own [worktrunk](https://worktrunk.dev) worktree and Herdr
-workspace, and talk to GitHub through `gh`. Only `ticket-sessions` and its `scripts/capacity.mjs` name Herdr, so
-another terminal tool replaces those two files and nothing else.
+`orchestrate` and `dispatch` run each ticket in its own [worktrunk](https://worktrunk.dev) worktree and terminal
+workspace, and talk to GitHub through `gh`. The terminal tool is whichever one they run in: Herdr's TUI, the Herdr app
+(through `hc`, herdr-core's CLI) or [Rex](https://www.superlogical.com/rex). Only `ticket-sessions/scripts/term.mjs`
+names them, so another tool is one more adapter there.
 
 ## Credits
 

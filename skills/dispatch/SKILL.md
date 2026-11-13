@@ -59,7 +59,7 @@ workspace.
 ## 1. Start
 
 1. Check you are inside the terminal tool; outside it, say so and stop.
-2. If list sessions shows a `<repo>-dispatch` agent, another dispatcher already runs this repo's queue: tell the
+2. If list sessions shows a `<repo>-dispatch` session, another dispatcher already runs this repo's queue: tell the
    user and stop. Otherwise, name yourself `<repo>-dispatch`.
 3. `git fetch origin`, and make the checks for before the first session.
 4. Find the issues already in progress: `gh issue list --state open --label in-progress --json number,title`. For
