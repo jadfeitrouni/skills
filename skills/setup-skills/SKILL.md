@@ -1,6 +1,6 @@
 ---
 name: setup-skills
-description: "Configure this repo for the engineering skills: set up its issue tracker, triage label vocabulary, and domain doc layout. Run once before first use of the other engineering skills."
+description: "Configure this repo for the engineering skills: set up its issue tracker, triage label vocabulary, domain doc layout and verify command. Run once before first use of the other engineering skills."
 disable-model-invocation: true
 ---
 
@@ -11,6 +11,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Issue tracker**: where issues live (GitHub by default; local markdown is also supported out of the box)
 - **Triage labels**: the strings used for the five canonical triage roles
 - **Domain docs**: where `GLOSSARY.md` and ADRs live, and the consumer rules for reading them
+- **Verify command**: the one command that must pass before work counts as done, and how gently it runs
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
 
@@ -28,6 +29,10 @@ Look at the current repo to understand its starting state. Read whatever exists;
 - `.scratch/`: a sign that a local-markdown issue tracker convention is already in use
 - Is the `triage` skill installed? (a `triage` skill folder alongside this one, or `triage` in your available skills.) This decides whether Section B runs at all.
 - Is the `dispatch` skill installed, found the same way? This decides whether Section B fills in the risk rule.
+- How work gets checked: a verify or "done means" section in `AGENTS.md` / `CLAUDE.md`, the check scripts
+  (`package.json` scripts, `Makefile` or `justfile` targets such as `verify`, `check`, `lint`, `test`, `typecheck`),
+  and the steps CI runs (`.github/workflows/`, `.gitlab-ci.yml`).
+- Is `orchestrate` or `dispatch` installed? This decides whether Section D covers parallel sessions.
 - Monorepo signals: a `pnpm-workspace.yaml`, a `workspaces` field in `package.json`, or a populated `packages/*` with its own `src/`. These are present only in a genuinely large multi-package repo; their absence means single-context, which is almost every repo.
 
 ### 2. Present findings and ask
@@ -69,12 +74,32 @@ the list. When `dispatch` isn't installed, drop the Risk section.
 
 Offer **multi-context** (a root `GLOSSARY-MAP.md` pointing to per-context `GLOSSARY.md` files) only when exploration found monorepo signals. Then confirm which layout they want.
 
+**Section D: Verify command.** The skills run one command, which `AGENTS.md` names, before work counts as done.
+Propose it from exploration: an existing script that runs every check CI runs, or, without CI, every check the docs
+say must pass. When the checks are a list of commands, or one applies only when certain files change, propose a
+`verify` script or target that runs them all, so the agent runs one command the same way every time.
+
+Then ask whether it is heavy: minutes long, using every core, or holding ports, servers or a database. If it is,
+propose that the script:
+
+- takes the file in `VERIFY_LOCK`, when that variable is set, as an exclusive lock for the whole run, so ticket
+  sessions on one machine verify one at a time: `flock` where it exists, else a lock that works on macOS too, such as
+  a `mkdir` lock that removes itself, naming who holds it while it waits;
+- runs its heavy steps under `nice`, and caps parallel jobs with one variable, defaulting to a few cores fewer than
+  the machine has, which a slower machine lowers in its shell profile;
+- writes the full output to a gitignored log and prints what failed and how to rerun just that.
+
+When `orchestrate` or `dispatch` is installed and the command holds ports or a database, also propose a variable per
+session that keeps parallel sessions apart, such as a port base derived from the ticket number, for the "Session
+environment" section of `docs/agents/ticket-sessions.md`.
+
 ### 3. Confirm and edit
 
 Show the user a draft of:
 
 - The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, and `docs/agents/triage-labels.md` (the last only when `triage` is installed)
+- The verify command's section, and the script, when Section D proposed one
 
 Let them edit before writing.
 
@@ -121,6 +146,19 @@ Then write the docs files using the seed templates in this skill folder as a sta
 - [domain.md](./domain.md): domain doc consumer rules + layout
 
 For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch using the user's description.
+
+Write the verify command into the same file, in the section that already says how to check work, or else in a new
+`## Verify` section above the `## Agent skills` block:
+
+```markdown
+## Verify
+
+`<command>` must pass before work counts as done. While working, run the checks nearest the change. When the work is
+done, run `<command>` once, in the background or with a long timeout. After a failure, read its log, rerun only what
+failed, then run `<command>` again.
+```
+
+Write the script, when Section D proposed one, and the session variables into `docs/agents/ticket-sessions.md`.
 
 ### 5. Done
 

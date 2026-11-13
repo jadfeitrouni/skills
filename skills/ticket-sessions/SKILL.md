@@ -46,8 +46,17 @@ different values. A missing file or key falls back to `{ "maxAgents": 3, "minFre
 
 ## Before the first session
 
-Make each check `docs/agents/ticket-sessions.md` lists under "Before starting sessions". If one fails, stop and tell
-the user what to fix.
+`mkdir -p <git common dir>/orchestrate`, where the verify lock lives. Then make each check
+`docs/agents/ticket-sessions.md` lists under "Before starting sessions". If one fails, stop and tell the user what to
+fix.
+
+## Session environment
+
+Ticket `<n>`'s session environment, which its session and every check run for it get:
+
+- `VERIFY_LOCK=<git common dir>/orchestrate/verify.lock`. A verify command that is heavy takes this file as an
+  exclusive lock, so the sessions on one machine verify one at a time. A light one ignores it.
+- Each variable under "Session environment" in `docs/agents/ticket-sessions.md`, for ticket `<n>`.
 
 ## Starting a session
 
@@ -58,8 +67,8 @@ To start ticket `<n>` on branch `<branch>`, cut from `<base>`, with prompt `<pro
 2. Find the worktree's path in `git worktree list --porcelain`, then wait until it is ready as "Worktree ready" in
    `docs/agents/ticket-sessions.md` describes.
 3. `term start <repo>-t<n> --cwd <path> --label "<repo> #<n>" -- "<prompt>"`, with one `--env <NAME>=<value>` before
-   the `--` for each variable under "Session environment" in `docs/agents/ticket-sessions.md`. It starts Claude in a
-   new workspace that doesn't take focus, names the session and gives it `<prompt>`.
+   the `--` for each variable of ticket `<n>`'s session environment. It starts Claude in a new workspace that doesn't
+   take focus, names the session and gives it `<prompt>`.
 
 ## Closing a session
 

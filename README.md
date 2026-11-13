@@ -72,7 +72,8 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 ## What a repo supplies
 
 - `AGENTS.md` names the **verify command** that must pass before work counts as done, the **protected branches**, and
-  which branches CI runs on and whether it skips drafts.
+  which branches CI runs on and whether it skips drafts. A heavy verify command takes the lock file in `VERIFY_LOCK`
+  when it is set, so the ticket sessions on one machine verify one at a time. `/setup-skills` writes the command.
 - `docs/agents/issue-tracker.md`, `triage-labels.md` and `domain.md`: run `/setup-skills` to write them.
   For `dispatch`, `triage-labels.md` also holds the **low-risk rule**: what an issue's change must not touch for its
   pull request to open without the maintainer's review. Without it, every issue waits for that review.
