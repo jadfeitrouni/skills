@@ -82,9 +82,10 @@ say must pass. When the checks are a list of commands, or one applies only when 
 Then ask whether it is heavy: minutes long, using every core, or holding ports, servers or a database. If it is,
 propose that the script:
 
-- takes the file in `VERIFY_LOCK`, when that variable is set, as an exclusive lock for the whole run, so ticket
-  sessions on one machine verify one at a time: `flock` where it exists, else a lock that works on macOS too, such as
-  a `mkdir` lock that removes itself, naming who holds it while it waits;
+- holds an exclusive `flock` for the whole run on `${VERIFY_LOCK:-<git common dir>/orchestrate/verify.lock}`
+  (`git rev-parse --path-format=absolute --git-common-dir`), creating its folder, so every run from any worktree on
+  one machine, ticket session or not, verifies one at a time. Where `flock` is missing it stops and says to install
+  it (`brew install flock` on macOS);
 - runs its heavy steps under `nice`, and caps parallel jobs with one variable, defaulting to a few cores fewer than
   the machine has, which a slower machine lowers in its shell profile;
 - writes the full output to a gitignored log and prints what failed and how to rerun just that.
