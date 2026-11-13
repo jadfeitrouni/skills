@@ -21,16 +21,20 @@ workspace.
 - **Integration branch**: the branch checked out where you run, never the default branch or a protected branch
   `AGENTS.md` lists. Ticket `<n>` builds on branch `<integration>-<n>`, in a sibling worktree worktrunk creates.
 - **State file**: `$(git rev-parse --path-format=absolute --git-common-dir)/orchestrate/<integration, / as ->.json`,
-  holding `parent`, `integration` and `autoLand` (the ticket numbers that land without the user's review).
+  holding `parent`, `integration`, `autoLand` (the ticket numbers that land without the user's review) and
+  `reviewed` (the integration branch's tip once the whole-branch review landed).
 - **Pull request**: the integration branch's one pull request into the default branch, which
-  `gh pr view <integration>` finds. It stays a draft while it changes; marking it ready and merging it are the user's.
+  `gh pr view <integration>` finds. It opens as a draft with the first ticket landed, since GitHub refuses a pull
+  request with no commits, and stays a draft while it changes; marking it ready and merging it are the user's.
 - **Landed**: a ticket with the `landed` label, the only record of what landed: tickets stay open until the pull
   request merges. To mark ticket `<n>` landed from a range of commits on the pushed integration branch:
   1. `gh issue edit <n> --remove-label ready-for-agent --add-label landed`.
   2. `gh issue comment <n>`: "Landed on `<integration>`:", the output of
      ``git log --reverse --format='- `%h` %s' <range>``, then "It stays open until the branch merges into
      `<default branch>`."
-  3. Add `Closes #<n>` to the pull request's body with `gh pr edit <integration> --body-file`.
+  3. If the integration branch has no pull request yet, open it: `gh pr create --draft --base <default branch>`, its
+     title as `AGENTS.md` describes, its body the parent's goal. Then add `Closes #<n>` to its body with
+     `gh pr edit <integration> --body-file`.
 - **In flight**: a ticket whose `<integration>-<n>` worktree exists (`git worktree list`). Its session is
   `<repo>-t<n>`.
 - **Frontier**: every open ticket neither landed nor in flight whose blockers have all landed or are closed.
@@ -38,6 +42,11 @@ workspace.
   - by default: `/implement #<n>. Commit on this branch only; pushing, merging and pull requests are mine. Once the
     user replies "approved", run exactly: <signal>`
   - for a ticket in `autoLand`: the same, ending `Once the work is committed, run exactly: <signal>`
+- **Review session prompt**, `<signal>` being the signal command to `<repo>-orch` with `#<parent> approved`, written
+  out, and `<base>` being `git merge-base origin/<default branch> <integration>`: `Review this branch as one change:
+  run /review-changes with <base> as the fixed point and #<parent> with its tickets as the spec source, then follow
+  /implement from its step 4. Commit on this branch only; pushing, merging and pull requests are mine. Once the user
+  replies "approved", run exactly: <signal>`
 - **Capacity**: tickets land on the integration branch, whose pull request stays a draft. Where `AGENTS.md` says CI
   skips drafts, check capacity without `--ci`; otherwise with it.
 
@@ -48,16 +57,15 @@ workspace.
    stop. Otherwise, name yourself `<repo>-orch`.
 3. Check the integration branch (see Reference) and that `git status --porcelain --untracked-files=no` is empty, and
    make the checks for before the first session.
-4. Read the state file, or create it with `parent` and `integration` set and `autoLand` empty.
+4. Read the state file, or create it with `parent` and `integration` set and `autoLand` and `reviewed` empty.
 5. Ask the user's go-ahead to push the integration branch during this run, then push it:
-   `git push -u origin <integration>`. If it has no pull request yet, open one as a draft:
-   `gh pr create --draft --base <default branch>`, its title as `AGENTS.md` describes, its body the parent's goal.
+   `git push -u origin <integration>`.
 6. Ask the user whether any tickets landed before this run without the `landed` label, and mark each one landed.
 7. List the in-flight tickets and check each has its `<repo>-t<n>` session (list sessions). Report one with no
    session to the user rather than relaunching it.
 
-Done when you are `<repo>-orch`, the state file is current, the draft pull request holds the pushed integration
-branch, and you know every ticket in flight.
+Done when you are `<repo>-orch`, the state file is current, the integration branch is pushed, and you know every
+ticket in flight.
 
 ## 2. Read the tickets
 
@@ -107,14 +115,28 @@ On `#<n> approved`, from a ticket session or the user:
    branch of the worktree it runs in, so run it in the ticket's:
    `wt -C <path> merge <integration> --no-squash --no-commit --no-remove < /dev/null`.
 4. Push the integration branch (`git push origin <integration>`), then mark the ticket landed from
-   `<tip>..<integration>`.
+   `<tip>..<integration>`. For `#<parent>`, the whole-branch review, mark nothing landed: set the state file's
+   `reviewed` to the integration branch's tip instead.
 5. Close the ticket's session, then `git branch -d <integration>-<n>`: worktrunk kept the branch, which has not merged
    into the default branch, and `git branch -d` judges against the integration branch, where it has landed.
 
 Tell the user in one line what landed, then go back to step 2. Done when the ticket is marked landed and its
 worktree, branch and workspace are gone.
 
-## 5. Finish the pull request
+## 5. Review the whole branch
+
+Each ticket's review saw only its own diff. This one sees the tickets together, so it catches what parallel sessions
+duplicated or named differently. If the state file's `reviewed` is the integration branch's tip, go to step 6.
+
+Otherwise, once the capacity check shows a free slot, start ticket `<parent>`'s session on branch
+`<integration>-<parent>` from `<integration>`, with the review session prompt, then end your turn and wait.
+On `#<parent> approved`, if its worktree has no commits ahead of the integration branch, the review changed nothing:
+close its session, `git branch -d <integration>-<parent>`, and set `reviewed` to the integration branch's tip.
+Otherwise, land it as step 4 describes.
+
+Done when `reviewed` is the integration branch's tip.
+
+## 6. Finish the pull request
 
 1. Rewrite the pull request's title as `AGENTS.md` describes and its body with `/pr`, keeping `Closes #<n>` for each
    landed ticket. The parent spec stays open for the user to close.
