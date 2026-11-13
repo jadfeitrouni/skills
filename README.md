@@ -67,13 +67,13 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 | `prototype` | model | Build a throwaway prototype to settle a state-model or UI question |
 | `diagnosing-bugs` | model | Diagnose a hard bug or regression from a red feedback loop |
 | `writing-for-agents` | model | Write skills, `AGENTS.md` and docs agents read |
-| `setup-matt-pocock-skills` | user | Write a repo's `docs/agents/` issue tracker, triage labels, low-risk rule and domain docs |
+| `setup-skills` | user | Write a repo's `docs/agents/` issue tracker, triage labels, low-risk rule and domain docs |
 
 ## What a repo supplies
 
 - `AGENTS.md` names the **verify command** that must pass before work counts as done, the **protected branches**, and
   which branches CI runs on and whether it skips drafts.
-- `docs/agents/issue-tracker.md`, `triage-labels.md` and `domain.md`: run `/setup-matt-pocock-skills` to write them.
+- `docs/agents/issue-tracker.md`, `triage-labels.md` and `domain.md`: run `/setup-skills` to write them.
   For `dispatch`, `triage-labels.md` also holds the **low-risk rule**: what an issue's change must not touch for its
   pull request to open without the maintainer's review. Without it, every issue waits for that review.
 - `docs/agents/ticket-sessions.md`, for `orchestrate` and `dispatch` only. Each section is optional:
@@ -98,8 +98,8 @@ its MIT license. They were last synced with his repo at `5863806` (12 November 2
 | `grill-me` | `skills/productivity/grill-me` | unchanged |
 | `grilling` | `skills/productivity/grilling` | unchanged |
 | `writing-for-agents` | `skills/productivity/writing-for-agents` | unchanged |
-| `to-spec` | `skills/engineering/to-spec` | unchanged |
-| `to-tickets` | `skills/engineering/to-tickets` | unchanged |
+| `to-spec` | `skills/engineering/to-spec` | points at `setup-skills` |
+| `to-tickets` | `skills/engineering/to-tickets` | points at `setup-skills` |
 | `triage` | `skills/engineering/triage` | makes the low-risk call |
 | `tdd` | `skills/engineering/tdd` | points at `review-changes` |
 | `domain-modeling` | `skills/engineering/domain-modeling` | unchanged |
@@ -109,7 +109,7 @@ its MIT license. They were last synced with his repo at `5863806` (12 November 2
 | `improve-codebase-architecture` | `skills/engineering/improve-codebase-architecture` | unchanged |
 | `pr` | `skills/engineering/pr`, itself from Dex Horthy's `show-me` | unchanged |
 | `retro` | `skills/engineering/retro` | unchanged |
-| `setup-matt-pocock-skills` | `skills/engineering/setup-matt-pocock-skills` | writes the low-risk rule; no `/wayfinder` operations |
+| `setup-skills` | `skills/engineering/setup-matt-pocock-skills` | renamed; writes the low-risk rule; no `/wayfinder` operations |
 | `resolving-merge-conflicts` | `skills/engineering/resolving-merge-conflicts`, since removed upstream | unchanged |
 | `review-changes` | `skills/engineering/code-review` | renamed; reviews uncommitted work too; hard checks, finding kinds and an outcome table |
 | `implement` | `skills/engineering/implement` | campsite rule; reviews before committing and acts on the findings by kind; verifies as `AGENTS.md` says |

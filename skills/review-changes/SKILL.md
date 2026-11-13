@@ -10,7 +10,7 @@ Two-axis review of the diff between the working tree and a fixed point the user 
 
 Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings. Start every sub-agent with a fresh context window.
 
-The issue tracker should have been provided to you — run `/setup-matt-pocock-skills` if `docs/agents/issue-tracker.md` is missing.
+The issue tracker should have been provided to you — run `/setup-skills` if `docs/agents/issue-tracker.md` is missing.
 
 ## Process
 
