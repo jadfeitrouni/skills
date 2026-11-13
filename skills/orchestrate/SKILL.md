@@ -116,8 +116,8 @@ worktree, branch and workspace are gone.
 
 ## 5. Finish the pull request
 
-1. Rewrite the pull request's title and body as `AGENTS.md` describes them, keeping `Closes #<n>` for each landed
-   ticket. The parent spec stays open for the user to close.
+1. Rewrite the pull request's title as `AGENTS.md` describes and its body with `/pr`, keeping `Closes #<n>` for each
+   landed ticket. The parent spec stays open for the user to close.
 2. Show the user the title and body, and on their go-ahead apply them with `gh pr edit <integration>`.
 
 Done when the pull request carries the cover letter and the user has its link.

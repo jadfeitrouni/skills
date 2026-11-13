@@ -52,9 +52,9 @@ workspace.
     work is committed, do not wait for a review: open the pull request.`
   - For any other issue: `Once the user replies "approved", open the pull request.`
   - Always: `To open the pull request: git fetch origin, rebase onto origin/<default branch>, and if it moved, run the
-    verify command AGENTS.md names again. Push the branch, then open a ready pull request into <default branch> as
-    AGENTS.md describes, its body holding the review's outcome table and ending "Closes #<n>", with before and after
-    screenshots if a user can see the change. Then run exactly: <signal "#<n> opened <pull request URL>">`
+    verify command AGENTS.md names again. Push the branch, then open a ready pull request into <default branch>, its
+    title as AGENTS.md describes and its body written with /pr, then the review's outcome table, ending "Closes #<n>".
+    Then run exactly: <signal "#<n> opened <pull request URL>">`
 
 ## 1. Start
 

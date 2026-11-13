@@ -54,11 +54,14 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 | `implement` | user | Build a ticket test-first, review it, verify, commit |
 | `orchestrate` | user | Run a spec's tickets in parallel sessions and land them on an integration branch |
 | `dispatch` | user | Run triaged standalone issues in parallel sessions, each to its own pull request |
-| `grilling` | model | The interview primitive behind `grill-me` and `triage` |
+| `improve-codebase-architecture` | user | Find deepening opportunities, report them visually, grill the one you pick |
+| `retro` | user | Review a session for improvements to the agent's environment |
+| `grilling` | model | The interview primitive behind `grill-me`, `triage` and `improve-codebase-architecture` |
 | `domain-modeling` | model | Keep `GLOSSARY.md` and ADRs current |
 | `codebase-design` | model | Deep-module vocabulary, used by `tdd` |
 | `tdd` | model | Red-green-refactor at agreed seams |
 | `review-changes` | model | Two-axis review of a diff: Standards and Spec |
+| `pr` | model | Pull request body: summary visual, evidence, merge danger |
 | `resolving-merge-conflicts` | model | Resolve a merge or rebase conflict by intent |
 | `ticket-sessions` | model | Capacity, start, signal and close for `orchestrate` and `dispatch` sessions |
 | `prototype` | model | Build a throwaway prototype to settle a state-model or UI question |
@@ -103,7 +106,10 @@ its MIT license. They were last synced with his repo at `5863806` (12 November 2
 | `codebase-design` | `skills/engineering/codebase-design` | unchanged |
 | `prototype` | `skills/engineering/prototype` | unchanged |
 | `diagnosing-bugs` | `skills/engineering/diagnosing-bugs` | unchanged |
-| `setup-matt-pocock-skills` | `skills/engineering/setup-matt-pocock-skills` | writes the low-risk rule |
+| `improve-codebase-architecture` | `skills/engineering/improve-codebase-architecture` | unchanged |
+| `pr` | `skills/engineering/pr`, itself from Dex Horthy's `show-me` | unchanged |
+| `retro` | `skills/engineering/retro` | unchanged |
+| `setup-matt-pocock-skills` | `skills/engineering/setup-matt-pocock-skills` | writes the low-risk rule; no `/wayfinder` operations |
 | `resolving-merge-conflicts` | `skills/engineering/resolving-merge-conflicts`, since removed upstream | unchanged |
 | `review-changes` | `skills/engineering/code-review` | renamed; reviews uncommitted work too; hard checks, finding kinds and an outcome table |
 | `implement` | `skills/engineering/implement` | campsite rule; reviews before committing and acts on the findings by kind; verifies as `AGENTS.md` says |
