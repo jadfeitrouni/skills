@@ -13,6 +13,7 @@
 //   term.mjs close <name>                 close a session and the workspace start made for it
 
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 function run(command, args) {
@@ -61,8 +62,8 @@ const herdr = {
   },
 };
 
-// Rex addresses a block by its label from any session, so a session's name is its block's label. Each ticket session
-// gets a Rex session of its own, which close kills whole.
+// A session's name is its block's label. Each ticket session gets a tab in the Rex session that started it, so one
+// dispatcher's tickets sit together as its tabs; close closes that tab.
 const rex = {
   tool: "rex",
   name(name) {
@@ -73,31 +74,46 @@ const rex = {
       json("rex", ["block", "ls", "-s", session_id, "--json"]).blocks.map((b) => ({ ...b, session_id })),
     );
   },
+  // Rex resolves a block id only within the session given, so a call to another session's block names it.
+  call(block, method) {
+    return json("rex", ["block", "call", "-s", block.session_id, "-b", block.block_id, method]);
+  },
   // A label outlives the program that took it, so a block counts as a session only while Claude runs in it.
   list() {
     return this.blocks()
       .filter((b) => b.creator_name === "com.superlogical.terminal")
-      .filter((b) => json("rex", ["block", "call", "-b", b.block_id, "process"]).foreground?.name === "claude")
-      .map((b) => ({ name: b.label, state: this.state(b.block_id) }));
+      .filter((b) => this.call(b, "process").foreground?.name === "claude")
+      .map((b) => ({ name: b.label, state: this.blockState(b) }));
   },
   // A program reports its status with OSC 7501; Claude Code does once it detects a terminal that answers.
-  state(block) {
-    const { records } = json("rex", ["block", "call", "-b", block, "program_status"]);
+  blockState(block) {
+    const { records } = this.call(block, "program_status");
     return normalState((records.find((r) => !r.id) ?? records[0])?.state);
   },
-  send(name, text) {
-    run("rex", ["send", "-b", name, text]);
-    run("rex", ["send-key", "-b", name, "enter"]);
+  state(name) {
+    return this.blockState(this.block(name));
   },
-  start(name, { cwd, label, env, prompt }) {
-    const created = json("rex", ["new", label, "--cwd", cwd, "--json", "--", ...claudeCommand(env, prompt)]);
-    const block = created.initial_windows[0].block_ids[0];
-    run("rex", ["block", "rename", "-s", created.session_id, block, name]);
-  },
-  close(name) {
+  block(name) {
     const block = this.blocks().find((b) => b.label === name);
     if (!block) throw new Error(`no Rex block labelled ${name}`);
-    run("rex", ["kill", block.session_id]);
+    return block;
+  },
+  send(name, text) {
+    const { session_id, block_id } = this.block(name);
+    run("rex", ["send", "-s", session_id, "-b", block_id, text]);
+    run("rex", ["send-key", "-s", session_id, "-b", block_id, "enter"]);
+  },
+  start(name, { cwd, label, env, prompt }) {
+    const session = process.env.REX_SESSION;
+    const created = json("rex", [
+      "window", "new", "-s", session, label, "--focus=false", "--cwd", cwd, "--json",
+      "--", ...claudeCommand(env, prompt),
+    ]);
+    run("rex", ["block", "rename", "-s", session, created.block_ids[0], name]);
+  },
+  close(name) {
+    const { session_id, window_id } = this.block(name);
+    run("rex", ["window", "close", "-s", session_id, window_id]);
   },
 };
 
@@ -200,7 +216,8 @@ function main([command, name, ...rest]) {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Compares real paths, since the script usually runs through a symlinked skill directory.
+if (import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   try {
     main(process.argv.slice(2));
   } catch (error) {
