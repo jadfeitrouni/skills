@@ -27,9 +27,49 @@ function json(command, args) {
 const STATES = new Set(["working", "blocked", "idle", "done"]);
 const normalState = (state) => (STATES.has(state) ? state : "unknown");
 
-// The command each tool runs in a new workspace: Claude with its first prompt, the environment set in front, since
-// neither Rex nor hc takes environment variables for a new terminal.
-const claudeCommand = (env, prompt) => (env.length ? ["env", ...env, "claude", prompt] : ["claude", prompt]);
+// A ticket session runs the same agent as its dispatcher: Claude Code opens with a slash command, OpenCode mentions
+// the skill id with `@`. AI_AGENT wins when both tools' variables are inherited; OpenCode also sets OPENCODE=1.
+const AI_AGENT = process.env.AI_AGENT;
+const AGENT =
+  AI_AGENT === "opencode" ? "opencode"
+  : AI_AGENT === "claude" ? "claude"
+  : process.env.OPENCODE === "1" ? "opencode"
+  : "claude";
+const SESSION_AGENTS = new Set(["claude", "opencode"]);
+const SKILLS = /\/(implement|review-changes|resolving-merge-conflicts|tdd|codebase-design)\b/g;
+
+const sessionPrompt = (prompt) => (AGENT === "opencode" ? prompt.replace(SKILLS, "@$1") : prompt);
+
+// A ticket session must run the dispatcher's model, not whichever one OpenCode last used. Pre-create its session
+// with that model at the ticket worktree, then open it by id; if the lookup fails, start without one.
+function opencodeSession(cwd) {
+  const current = process.env.OPENCODE_SESSION_ID;
+  if (!current) return null;
+  try {
+    const { data } = JSON.parse(run("opencode", ["api", "GET", `/api/session/${current}`]));
+    const created = JSON.parse(
+      run("opencode", [
+        "api", "session.create", "--data",
+        JSON.stringify({ model: data.model, location: { directory: cwd } }),
+      ]),
+    );
+    return created.data.id;
+  } catch {
+    return null;
+  }
+}
+
+// The command each tool runs in a new workspace, with its first prompt and the environment in front, since neither
+// Rex nor hc takes environment variables for a new terminal. A fresh OpenCode session must not inherit the
+// dispatcher's session id, or it would attach to this conversation instead of starting its own.
+const agentCommand = (env, prompt, cwd) => {
+  const session = AGENT === "opencode" ? opencodeSession(cwd) : null;
+  const command =
+    AGENT === "opencode"
+      ? ["opencode", ...(session ? ["--session", session] : []), "--prompt", sessionPrompt(prompt)]
+      : ["claude", sessionPrompt(prompt)];
+  return ["env", ...(AGENT === "opencode" ? ["-u", "OPENCODE_SESSION_ID"] : []), ...env, ...command];
+};
 
 const herdr = {
   tool: "herdr",
@@ -50,12 +90,16 @@ const herdr = {
     run("herdr", ["agent", "prompt", name, text]);
   },
   start(name, { cwd, label, env, prompt }) {
+    const session = AGENT === "opencode" ? opencodeSession(cwd) : null;
     const created = json("herdr", [
       "workspace", "create", "--cwd", cwd, "--label", label, "--no-focus",
       ...env.flatMap((pair) => ["--env", pair]),
     ]);
-    run("herdr", ["agent", "start", name, "--kind", "claude", "--pane", created.result.root_pane.pane_id]);
-    this.send(name, prompt);
+    run("herdr", [
+      "agent", "start", name, "--kind", AGENT, "--pane", created.result.root_pane.pane_id,
+      ...(session ? ["--", "--session", session] : []),
+    ]);
+    this.send(name, sessionPrompt(prompt));
   },
   close(name) {
     run("herdr", ["workspace", "close", this.agent(name).workspace_id]);
@@ -78,11 +122,11 @@ const rex = {
   call(block, method) {
     return json("rex", ["block", "call", "-s", block.session_id, "-b", block.block_id, method]);
   },
-  // A label outlives the program that took it, so a block counts as a session only while Claude runs in it.
+  // A label outlives the program that took it, so a block counts as a session only while its agent runs in it.
   list() {
     return this.blocks()
       .filter((b) => b.creator_name === "com.superlogical.terminal")
-      .filter((b) => this.call(b, "process").foreground?.name === "claude")
+      .filter((b) => SESSION_AGENTS.has(this.call(b, "process").foreground?.name))
       .map((b) => ({ name: b.label, state: this.blockState(b) }));
   },
   // A program reports its status with OSC 7501; Claude Code does once it detects a terminal that answers.
@@ -107,7 +151,7 @@ const rex = {
     const session = process.env.REX_SESSION;
     const created = json("rex", [
       "window", "new", "-s", session, label, "--focus=false", "--cwd", cwd, "--json",
-      "--", ...claudeCommand(env, prompt),
+      "--", ...agentCommand(env, prompt, cwd),
     ]);
     run("rex", ["block", "rename", "-s", session, created.block_ids[0], name]);
   },
@@ -133,11 +177,11 @@ const hc = {
   name(name) {
     run("hc", ["label", process.env.HC_TERMINAL_ID, `session=${name}`]);
   },
-  // A label outlives the program that took it, so a terminal counts as a session only while Claude runs in it.
+  // A label outlives the program that took it, so a terminal counts as a session only while its agent runs in it.
   list() {
     return json("hc", ["ls", "--json"])
       .terminals.map((t) => this.terminal(t.address))
-      .filter((t) => t.labels?.session && t.foreground?.name === "claude")
+      .filter((t) => t.labels?.session && SESSION_AGENTS.has(t.foreground?.name))
       .map((t) => ({ name: t.labels.session, state: normalState(t.status?.state) }));
   },
   state(name) {
@@ -150,7 +194,7 @@ const hc = {
     run("hc", [
       "run", "--bg", "--no-parent", "--json", "--cwd", cwd, "--label", `session=${name}`,
       "--label", `herdr.space=${name}`, "--label", `herdr.tab=${name}`,
-      "--", ...claudeCommand(env, prompt),
+      "--", ...agentCommand(env, prompt, cwd),
     ]);
   },
   close(name) {
