@@ -14,6 +14,7 @@
 
 import { execFileSync } from "node:child_process";
 import { realpathSync } from "node:fs";
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 function run(command, args) {
@@ -75,6 +76,17 @@ const UNSET_ENV = {
   ],
 };
 
+// Pre-trust a ticket worktree for this session only so Antigravity skips the interactive workspace trust prompt
+// without accumulating ephemeral worktree paths in settings.json. Include both logical and real paths in case
+// cwd crosses a symlink (such as /var -> /private/var on macOS).
+function agyTrustArgs(cwd) {
+  const paths = new Set([resolve(cwd)]);
+  try {
+    paths.add(realpathSync(cwd));
+  } catch {}
+  return ["--settings", JSON.stringify({ trustedWorkspaces: [...paths] })];
+}
+
 // The command each tool runs in a new workspace, with its first prompt and the environment in front, since neither
 // Rex nor hc takes environment variables for a new terminal. A fresh session must not inherit the dispatcher's
 // session variables, or it could attach to this conversation instead of starting its own.
@@ -84,7 +96,7 @@ const agentCommand = (env, prompt, cwd) => {
     AGENT === "opencode"
       ? ["opencode", ...(session ? ["--session", session] : []), "--prompt", sessionPrompt(prompt)]
       : AGENT === "agy"
-        ? ["agy", "--prompt-interactive", sessionPrompt(prompt)]
+        ? ["agy", ...agyTrustArgs(cwd), "--prompt-interactive", sessionPrompt(prompt)]
         : ["claude", sessionPrompt(prompt)];
   const unset = (UNSET_ENV[AGENT] ?? []).flatMap((name) => ["-u", name]);
   return ["env", ...unset, ...env, ...command];
@@ -110,13 +122,19 @@ const herdr = {
   },
   start(name, { cwd, label, env, prompt }) {
     const session = AGENT === "opencode" ? opencodeSession(cwd) : null;
+    const extraArgs =
+      AGENT === "opencode" && session
+        ? ["--session", session]
+        : AGENT === "agy"
+          ? agyTrustArgs(cwd)
+          : [];
     const created = json("herdr", [
       "workspace", "create", "--cwd", cwd, "--label", label, "--no-focus",
       ...env.flatMap((pair) => ["--env", pair]),
     ]);
     run("herdr", [
       "agent", "start", name, "--kind", AGENT, "--pane", created.result.root_pane.pane_id,
-      ...(session ? ["--", "--session", session] : []),
+      ...(extraArgs.length ? ["--", ...extraArgs] : []),
     ]);
     this.send(name, sessionPrompt(prompt));
   },
