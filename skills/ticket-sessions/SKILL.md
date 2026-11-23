@@ -32,7 +32,8 @@ push. Before starting a session, run `node <this skill's directory>/scripts/capa
 open a ready pull request, add `--ci=<branches>`: the comma-separated branches `AGENTS.md` says CI runs on. The script
 prints one JSON line, and a session may start only while its `slots` is above 0. It counts these limits:
 
-- **Agents**: ticket sessions running on this machine stay under `maxAgents`.
+- **Agents**: ticket sessions on this machine, every repo's, stay under the machine's `maxAgents`, and this repo's stay
+  under the repo's `maxAgents`, so one repo's queue leaves slots for the others. A session counts from its claim.
 - **Memory**: free memory (`MemAvailable`) stays at or above `minFreeGiB`. macOS goes unchecked; there the agent limit
   is the only machine limit.
 - **CI**, with `--ci`: ready pull requests into those branches, anyone's, plus issues labelled `in-progress`, stay
@@ -41,8 +42,11 @@ prints one JSON line, and a session may start only while its `slots` is above 0.
 When work is waiting and `slots` is 0, run the same command with `--wait`, as a background task. It exits once a slot
 frees up, re-checking every 5 minutes, and its exit wakes you.
 
-The limits come from `<git common dir>/orchestrate/config.json` on each machine, so a laptop and a server can hold
-different values. A missing file or key falls back to `{ "maxAgents": 3, "minFreeGiB": 6, "ciCap": 4 }`.
+Two files on each machine hold the limits, so a laptop and a server can hold different values. A missing file or key
+falls back to the default shown:
+
+- **Machine**: `${XDG_CONFIG_HOME:-~/.config}/ticket-sessions/config.json`, `{ "maxAgents": 6, "minFreeGiB": 6 }`.
+- **Repo**: `<git common dir>/orchestrate/config.json`, `{ "maxAgents": 3, "ciCap": 4 }`.
 
 ## Before the first session
 
@@ -62,11 +66,16 @@ Ticket `<n>`'s session environment, which its session and every check run for it
 
 To start ticket `<n>` on branch `<branch>`, cut from `<base>`, with prompt `<prompt>`:
 
-1. `wt switch --create <branch> --base <base> --no-cd < /dev/null`. On "needs approval", stop starting sessions and
+1. Claim its slot: `node <this skill's directory>/scripts/capacity.mjs --claim=<repo>-t<n>`, with the `--ci` your
+   capacity check takes. It claims only while `slots` is above 0, one dispatcher at a time across the machine, so two
+   repos' dispatchers never take the same slot. Exit 2 means no slot was free: start nothing, as if the capacity check
+   had shown 0. The claim holds the slot until the session runs, for up to 30 minutes. If a later step fails, give it
+   back: `node <this skill's directory>/scripts/capacity.mjs --release=<repo>-t<n>`.
+2. `wt switch --create <branch> --base <base> --no-cd < /dev/null`. On "needs approval", stop starting sessions and
    ask the user to run `! wt config approvals add`, then resume.
-2. Find the worktree's path in `git worktree list --porcelain`, then wait until it is ready as "Worktree ready" in
+3. Find the worktree's path in `git worktree list --porcelain`, then wait until it is ready as "Worktree ready" in
    `docs/agents/ticket-sessions.md` describes.
-3. `term start <repo>-t<n> --cwd <path> --label "<repo> #<n>" -- "<prompt>"`, with one `--env <NAME>=<value>` before
+4. `term start <repo>-t<n> --cwd <path> --label "<repo> #<n>" -- "<prompt>"`, with one `--env <NAME>=<value>` before
    the `--` for each variable of ticket `<n>`'s session environment. It starts the dispatcher's agent (Claude Code,
    OpenCode or Antigravity) in a new workspace that doesn't take focus, names the session and gives it `<prompt>`. An
    OpenCode session is created with the dispatcher's model; Claude Code and Antigravity sessions run under their

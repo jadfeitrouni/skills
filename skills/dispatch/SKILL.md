@@ -79,7 +79,8 @@ Done when you are `<repo>-dispatch` and you know every issue in progress.
 3. For each free slot, take the next issue in the queue:
    1. Claim it first: `gh issue edit <n> --add-label in-progress`.
    2. Start its session on branch `dispatch/<n>` from the default branch, with the ticket session prompt. If it fails
-      to start, remove the `in-progress` label again and tell the user why.
+      to start, remove the `in-progress` label again. When its slot claim found no free slot, stop filling slots;
+      otherwise tell the user why.
 4. Tell the user, one line per issue, what you launched and whether it is `low-risk`.
 5. If the queue still holds issues but no slot is free, run the capacity check with `--wait` as a background task.
    If the queue is empty and nothing is in progress, tell the user the queue is done.
