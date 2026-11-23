@@ -102,10 +102,14 @@ End with a one-line summary: total findings per axis, and the worst issue _withi
 
 When the findings are acted on, by you or by the skill that ran this review, their kind decides what happens:
 
-- **Hard**: fix it. When the finding is wrong, the reviewer having misread the code or the spec, mark it **Disputed**
-  and quote the code or spec line that contradicts it, for the user to decide.
-- **Judgement**: leave the code as it is and mark it **Proposed**, with the fix you would make and what that fix
-  would add: new types, files or layers, and the call sites it touches. Fix it only once the user picks it.
+- **Hard**, and **Judgement** whose fix is **contained**: fix it. A contained fix adds no type, file, layer or shared
+  interface, and edits only files the change already touches: a rename, an inlined helper, a duplicate folded into
+  one. When the finding is wrong, the reviewer having misread the code or the spec, or a documented repo standard
+  endorsing what the smell flags, mark it **Disputed** and quote the code, spec or standard that contradicts it, for
+  the user to decide.
+- **Judgement** whose fix is structural, any fix that is not contained: leave the code as it is and mark it
+  **Proposed**, with the fix you would make and what that fix would add: new types, files or layers, and the call
+  sites it touches. Fix it only once the user picks it.
 
 Then report every finding as one table, a row each, in review order:
 
@@ -113,6 +117,7 @@ Then report every finding as one table, a row each, in review order:
 |---|---|---|---|
 | S1 | Hard | `orders/api.ts` types the response as `any`, which `CODING_STANDARDS.md` forbids. | Fixed: typed as `OrderResponse`. |
 | S2 | Judgement | `price`, `currency` and `taxRate` travel together through four functions in `checkout/` (Data Clumps). | Proposed: a `Money` type. Adds one type and changes four signatures. |
+| S3 | Judgement | `checkout/cart.ts` names the discounted subtotal `tmp2`, which hides what it holds (Mysterious Name). | Fixed: renamed `discountedSubtotal`. |
 | P1 | Hard | The spec rejects refunds after 30 days; `refunds.ts` accepts them. | Fixed: `refunds.ts` rejects them. |
 
 Write each finding so someone who has seen neither the diff nor the review can decide on it: what is wrong, where
