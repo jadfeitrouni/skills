@@ -1,6 +1,6 @@
 ---
 name: ticket-sessions
-description: Ticket sessions, the parallel Claude sessions /orchestrate and /dispatch run, one per ticket in its own worktree and terminal workspace. Use to check capacity for one, or to start, read, prompt or close one.
+description: Ticket sessions, the parallel agent sessions /orchestrate and /dispatch run, one per ticket in its own worktree and terminal workspace. Use to check capacity for one, or to start, read, prompt or close one.
 user-invocable: false
 ---
 
@@ -17,7 +17,7 @@ tool** this session runs inside: Herdr, the Herdr app or Rex. A session it start
 - **Inside the terminal tool**: `term inside` succeeds and names the tool.
 - **Repo name** `<repo>`: `gh repo view --json name --jq .name`. Every session name starts with it, since sessions
   from several repos share one terminal tool.
-- **Name yourself `<name>`**: `term name <name>`. Some tools drop the name when Claude exits, so name yourself on
+- **Name yourself `<name>`**: `term name <name>`. Some tools drop the name when the agent exits, so name yourself on
   every start.
 - **List sessions**: `term list`, each running ticket session with its name and state. Ticket `<n>`'s session is `<repo>-t<n>`.
 - **Read a session's state**: `term state <repo>-t<n>`: `working`, `blocked`, `idle`, `done` or `unknown`.
@@ -67,10 +67,10 @@ To start ticket `<n>` on branch `<branch>`, cut from `<base>`, with prompt `<pro
 2. Find the worktree's path in `git worktree list --porcelain`, then wait until it is ready as "Worktree ready" in
    `docs/agents/ticket-sessions.md` describes.
 3. `term start <repo>-t<n> --cwd <path> --label "<repo> #<n>" -- "<prompt>"`, with one `--env <NAME>=<value>` before
-   the `--` for each variable of ticket `<n>`'s session environment. It starts the dispatcher's agent (Claude Code or
-   OpenCode) in a new workspace that doesn't
-   take focus, names the session and gives it `<prompt>`. An OpenCode session is created with the dispatcher's model;
-   a Claude Code session runs under Claude's configured model.
+   the `--` for each variable of ticket `<n>`'s session environment. It starts the dispatcher's agent (Claude Code,
+   OpenCode or Antigravity) in a new workspace that doesn't take focus, names the session and gives it `<prompt>`. An
+   OpenCode session is created with the dispatcher's model; Claude Code and Antigravity sessions run under their
+   configured model.
 
 ## Closing a session
 

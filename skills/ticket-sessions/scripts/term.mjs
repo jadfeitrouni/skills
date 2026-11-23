@@ -9,7 +9,7 @@
 //   term.mjs state <name>                 one session's state: working, blocked, idle, done or unknown
 //   term.mjs send <name> <text>           type text into a session and submit it
 //   term.mjs start <name> --cwd <path> --label <label> [--env NAME=value]... -- <prompt>
-//                                         start Claude in a new workspace, unfocused, named <name>, with <prompt>
+//                                         start the dispatcher's agent in a new workspace, unfocused, named <name>, with <prompt>
 //   term.mjs close <name>                 close a session and the workspace start made for it
 
 import { execFileSync } from "node:child_process";
@@ -27,15 +27,18 @@ function json(command, args) {
 const STATES = new Set(["working", "blocked", "idle", "done"]);
 const normalState = (state) => (STATES.has(state) ? state : "unknown");
 
-// A ticket session runs the same agent as its dispatcher: Claude Code opens with a slash command, OpenCode mentions
-// the skill id with `@`. AI_AGENT wins when both tools' variables are inherited; OpenCode also sets OPENCODE=1.
+// A ticket session runs the same agent as its dispatcher: Claude Code and Antigravity open with a slash command,
+// OpenCode mentions the skill id with `@`. AI_AGENT wins when tools' variables are inherited; Antigravity sets
+// ANTIGRAVITY_AGENT=1 and OpenCode sets OPENCODE=1.
 const AI_AGENT = process.env.AI_AGENT;
 const AGENT =
   AI_AGENT === "opencode" ? "opencode"
   : AI_AGENT === "claude" ? "claude"
+  : AI_AGENT === "agy" || AI_AGENT === "antigravity" ? "agy"
+  : process.env.ANTIGRAVITY_AGENT === "1" ? "agy"
   : process.env.OPENCODE === "1" ? "opencode"
   : "claude";
-const SESSION_AGENTS = new Set(["claude", "opencode"]);
+const SESSION_AGENTS = new Set(["claude", "opencode", "agy"]);
 const SKILLS = /\/(implement|review-changes|resolving-merge-conflicts|tdd|codebase-design)\b/g;
 
 const sessionPrompt = (prompt) => (AGENT === "opencode" ? prompt.replace(SKILLS, "@$1") : prompt);
@@ -59,16 +62,32 @@ function opencodeSession(cwd) {
   }
 }
 
+// Session variables from the dispatcher's own conversation that a fresh child agent must not inherit.
+const UNSET_ENV = {
+  opencode: ["OPENCODE_SESSION_ID"],
+  agy: [
+    "ANTIGRAVITY_AGENT",
+    "ANTIGRAVITY_CONVERSATION_ID",
+    "ANTIGRAVITY_TRAJECTORY_ID",
+    "ANTIGRAVITY_SOURCE_METADATA",
+    "ANTIGRAVITY_LS_ADDRESS",
+    "ANTIGRAVITY_CSRF_TOKEN",
+  ],
+};
+
 // The command each tool runs in a new workspace, with its first prompt and the environment in front, since neither
-// Rex nor hc takes environment variables for a new terminal. A fresh OpenCode session must not inherit the
-// dispatcher's session id, or it would attach to this conversation instead of starting its own.
+// Rex nor hc takes environment variables for a new terminal. A fresh session must not inherit the dispatcher's
+// session variables, or it could attach to this conversation instead of starting its own.
 const agentCommand = (env, prompt, cwd) => {
   const session = AGENT === "opencode" ? opencodeSession(cwd) : null;
   const command =
     AGENT === "opencode"
       ? ["opencode", ...(session ? ["--session", session] : []), "--prompt", sessionPrompt(prompt)]
-      : ["claude", sessionPrompt(prompt)];
-  return ["env", ...(AGENT === "opencode" ? ["-u", "OPENCODE_SESSION_ID"] : []), ...env, ...command];
+      : AGENT === "agy"
+        ? ["agy", "--prompt-interactive", sessionPrompt(prompt)]
+        : ["claude", sessionPrompt(prompt)];
+  const unset = (UNSET_ENV[AGENT] ?? []).flatMap((name) => ["-u", name]);
+  return ["env", ...unset, ...env, ...command];
 };
 
 const herdr = {
@@ -129,7 +148,7 @@ const rex = {
       .filter((b) => SESSION_AGENTS.has(this.call(b, "process").foreground?.name))
       .map((b) => ({ name: b.label, state: this.blockState(b) }));
   },
-  // A program reports its status with OSC 7501; Claude Code does once it detects a terminal that answers.
+  // A program reports its status with OSC 7501; Claude Code and Antigravity do once they detect a terminal that answers.
   blockState(block) {
     const { records } = this.call(block, "program_status");
     return normalState((records.find((r) => !r.id) ?? records[0])?.state);
