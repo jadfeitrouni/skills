@@ -56,7 +56,8 @@ workspace.
 2. If list sessions shows a `<repo>-orch` session, another orchestrator already runs in this repo: tell the user and
    stop. Otherwise, name yourself `<repo>-orch`.
 3. Check the integration branch (see Reference) and that `git status --porcelain --untracked-files=no` is empty, and
-   make the checks for before the first session.
+   make the checks for before the first session. If one fails, tell the user and stop; on the default branch, have
+   them rerun from an integration-branch worktree (`wt switch --create <integration>`).
 4. Read the state file, or create it with `parent` and `integration` set and `autoLand` and `reviewed` empty.
 5. Ask the user's go-ahead to push the integration branch during this run, then push it:
    `git push -u origin <integration>`.
