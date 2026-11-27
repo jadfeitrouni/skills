@@ -1,0 +1,3 @@
+interface:
+  display_name: "Land"
+  short_description: "See a branch's pull request through to its merge"

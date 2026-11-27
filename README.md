@@ -51,9 +51,9 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 | `to-spec` | user | Turn the conversation into a spec on the issue tracker |
 | `to-tickets` | user | Split a spec into tracer-bullet tickets with blocking edges |
 | `triage` | user | Move incoming issues through the triage roles to agent-ready briefs |
-| `implement` | user | Build a ticket test-first, review it, verify, commit |
+| `implement` | user | Build a ticket test-first, review it, verify, commit, then land it |
 | `orchestrate` | user | Run a spec's tickets in parallel sessions and land them on an integration branch |
-| `dispatch` | user | Run triaged standalone issues in parallel sessions, each to its own pull request |
+| `dispatch` | user | Run triaged standalone issues in parallel sessions, each landed through its own pull request |
 | `improve-codebase-architecture` | user | Find deepening opportunities, report them visually, grill the one you pick |
 | `retro` | user | Review a session for improvements to the agent's environment |
 | `grilling` | model | The interview primitive behind `grill-me`, `triage` and `improve-codebase-architecture` |
@@ -62,6 +62,7 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
 | `tdd` | model | Red-green-refactor at agreed seams |
 | `review-changes` | model | Two-axis review of a diff: Standards and Spec |
 | `pr` | model | Pull request body: summary visual, evidence, merge danger |
+| `land` | model | Own a branch's pull request from opening to merge: CI failures, conflicts, the low-risk merge |
 | `resolving-merge-conflicts` | model | Resolve a merge or rebase conflict by intent |
 | `ticket-sessions` | model | Capacity, start, signal and close for `orchestrate` and `dispatch` sessions |
 | `prototype` | model | Build a throwaway prototype to settle a state-model or UI question |
@@ -75,8 +76,9 @@ The skills hold no repo specifics. Each repo supplies those through its own `AGE
   which branches CI runs on and whether it skips drafts. A heavy verify command holds a `flock` on `VERIFY_LOCK`,
   defaulting to `<git common dir>/orchestrate/verify.lock`, so its runs on one machine take turns. `/setup-skills` writes the command.
 - `docs/agents/issue-tracker.md`, `triage-labels.md` and `domain.md`: run `/setup-skills` to write them.
-  For `dispatch`, `triage-labels.md` also holds the **low-risk rule**: what an issue's change must not touch for its
-  pull request to open without the maintainer's review. Without it, every issue waits for that review.
+  For `dispatch` and `land`, `triage-labels.md` also holds the **low-risk rule**: what an issue's change must not
+  touch for its pull request to merge itself, and the **low-risk check** that enforces its paths. Without them, every
+  pull request waits for the maintainer to merge it.
 - `docs/agents/ticket-sessions.md`, for `orchestrate` and `dispatch` only. Each section is optional:
   - **Before starting sessions**: checks the dispatcher makes before launching anything.
   - **Worktree ready**: what to wait for after worktrunk creates a worktree.
@@ -113,7 +115,7 @@ its MIT license. They were last synced with his repo at `5863806` (12 November 2
 | `retro` | `skills/engineering/retro` | unchanged |
 | `setup-skills` | `skills/engineering/setup-matt-pocock-skills` | renamed; writes the low-risk rule; no `/wayfinder` operations |
 | `resolving-merge-conflicts` | `skills/engineering/resolving-merge-conflicts`, since removed upstream | unchanged |
-| `review-changes` | `skills/engineering/code-review` | renamed; reviews uncommitted work too; hard checks, finding kinds and an outcome table |
-| `implement` | `skills/engineering/implement` | campsite rule; reviews before committing and acts on the findings by kind; verifies as `AGENTS.md` says |
+| `review-changes` | `skills/engineering/code-review` | renamed; reviews uncommitted work too; hard checks, finding kinds, stop reasons, follow-up routing and an outcome table |
+| `implement` | `skills/engineering/implement` | campsite rule; reviews before committing and acts on the findings; stops only on Proposed rows; verifies as `AGENTS.md` says; lands through `land` |
 
-`orchestrate`, `dispatch` and `ticket-sessions` are mine.
+`orchestrate`, `dispatch`, `land` and `ticket-sessions` are mine.

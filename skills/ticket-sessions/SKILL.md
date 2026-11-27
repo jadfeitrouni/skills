@@ -24,20 +24,26 @@ tool** this session runs inside: Herdr, the Herdr app or Rex. A session it start
 - **Signal command** to session `<to>` with `<message>`: `node <absolute path of term.mjs> send <to> "<message>"`. A
   ticket session's prompt carries it written out in full, since the session never loads this skill.
 - **Prompt a session**: the signal command with `<repo>-t<n>` as `<to>`.
+- **Mark a session landing**: `node <this skill's directory>/scripts/capacity.mjs --landing=<repo>-t<n>`. A landing
+  session mostly waits on its open pull request, so it stops counting against the agent limits; its CI runs still
+  count against CI. The mark lasts until the session closes.
 
 ## Capacity
 
 Every ticket session builds, typechecks and tests on the machine it runs on, and a ready pull request runs CI on every
 push. Before starting a session, run `node <this skill's directory>/scripts/capacity.mjs`. When the session's work will
-open a ready pull request, add `--ci=<branches>`: the comma-separated branches `AGENTS.md` says CI runs on. The script
-prints one JSON line, and a session may start only while its `slots` is above 0. It counts these limits:
+open a ready pull request, add `--ci`. The script prints one JSON line, and a session may start only while its `slots`
+is above 0. It counts these limits:
 
 - **Agents**: ticket sessions on this machine, every repo's, stay under the machine's `maxAgents`, and this repo's stay
-  under the repo's `maxAgents`, so one repo's queue leaves slots for the others. A session counts from its claim.
+  under the repo's `maxAgents`, so one repo's queue leaves slots for the others. A session counts from its claim
+  until it is marked landing.
 - **Memory**: free memory (`MemAvailable`) stays at or above `minFreeGiB`. macOS goes unchecked; there the agent limit
   is the only machine limit.
-- **CI**, with `--ci`: ready pull requests into those branches, anyone's, plus issues labelled `in-progress`, stay
-  under `ciCap`. The count lives on GitHub, so it holds across machines and includes the maintainer's own pull requests.
+- **CI**, with `--ci`: the repo's workflow runs, queued or running, stay under `ciCap`. It guards against runs waiting
+  for a runner, not CI minutes, which follow from the work done rather than how much of it runs at once. The count
+  lives on GitHub, so it holds across machines and includes the maintainer's own runs. An open pull request nothing
+  pushes to costs nothing, so one waiting for its merge doesn't count.
 
 When work is waiting and `slots` is 0, run the same command with `--wait`, as a background task. It exits once a slot
 frees up, re-checking every 5 minutes, and its exit wakes you.

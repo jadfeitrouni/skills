@@ -17,16 +17,19 @@ Edit the "Label in our tracker" column to match whatever vocabulary you actually
 ## Risk: `low-risk`
 
 An issue moved to `ready-for-agent` also gets a risk call, made by the maintainer during triage, never by the agent
-that implements it. With `low-risk`, `/dispatch` sends the agent's work straight to a pull request once its checks
-and review pass. Without it, the agent stops after review and the maintainer approves the work before a pull request
-opens. Neither path merges: merging stays the maintainer's.
+that implements it. With `low-risk`, the agent's pull request merges itself once CI and the low-risk check pass.
+Without it, the maintainer merges it. Either way, the agent stops for the maintainer only on what its review leaves
+to them.
 
 An issue is `low-risk` only when every acceptance criterion in its agent brief can be checked by a test or a command
 the agent runs, and the change touches none of these:
 
-- <an area the maintainer reviews before any pull request opens>
+- <an area the maintainer must see before it merges>
 
 <The usual `low-risk` work in this repo, such as tests, docs, copy and small UI fixes.>
+
+**Low-risk check**: <a command that fails when a diff touches a path the list above names, run from the default
+branch's copy so a change never judges itself; without one, nothing merges itself>.
 
 The call only moves one way during implementation: an agent that finds a `low-risk` issue needs one of the changes
 above stops, says which, and the issue loses `low-risk`. Nothing gains `low-risk` except at triage.

@@ -67,8 +67,9 @@ The defaults are the five canonical roles, each label string equal to its name: 
 When `dispatch` is installed, also fill in the template's **Risk** section: the areas a change must not touch to be
 `low-risk`, and the usual `low-risk` work. Propose the areas from what exploration found (the database schema and
 migrations, authentication and permissions, security settings, CI, deploy and infrastructure configuration, dependency
-upgrades, and whatever else in this repo the maintainer should see before a pull request opens) and let the user edit
-the list. When `dispatch` isn't installed, drop the Risk section.
+upgrades, and whatever else in this repo the maintainer should see before it merges) and let the user edit the list.
+Offer a low-risk check script holding the list's paths as globs. When `dispatch` isn't installed, drop the Risk
+section.
 
 **Section C: Domain docs.** Default to **single-context** (one `GLOSSARY.md` + `docs/adr/` at the repo root). This fits almost every repo; write it without asking.
 

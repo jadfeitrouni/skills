@@ -3,10 +3,11 @@
 // config files that hold them.
 //
 //   node capacity.mjs                       machine and repo limits only
-//   node capacity.mjs --ci=main,production  also the CI limit, counting ready pull requests into those branches
+//   node capacity.mjs --ci                  also the CI limit, counting the repo's workflow runs queued or running
 //   node capacity.mjs --wait                exit only once a slot is free, re-checking every 5 minutes
 //   node capacity.mjs --claim=<repo>-t<n>   take a slot for that session before starting it; exits 2 when none is free
 //   node capacity.mjs --release=<repo>-t<n> give back a claim whose session failed to start
+//   node capacity.mjs --landing=<repo>-t<n> mark a running session landing, so it stops counting against agent limits
 
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -28,27 +29,32 @@ const CONFIG_HOME = process.env.XDG_CONFIG_HOME || join(homedir(), ".config");
 const STATE_DIR = join(process.env.XDG_STATE_HOME || join(homedir(), ".local", "state"), "ticket-sessions");
 const CLAIMS_DIR = join(STATE_DIR, "claims");
 const LOCK_DIR = join(STATE_DIR, "claims.lock");
+const LANDING_DIR = join(STATE_DIR, "landing");
 
 const args = process.argv.slice(2);
 const option = (name) => args.find((arg) => arg.startsWith(`--${name}=`))?.slice(`--${name}=`.length);
 const WAIT = args.includes("--wait");
 const CLAIM = option("claim");
 const RELEASE = option("release");
-const ciBranches = option("ci")?.split(",").filter(Boolean);
+const LANDING = option("landing");
+// --ci=<branches> was the old form, when the limit counted pull requests into those branches; it still turns it on.
+const CI = args.some((arg) => arg === "--ci" || arg.startsWith("--ci="));
 
-for (const name of [CLAIM, RELEASE]) {
+for (const name of [CLAIM, RELEASE, LANDING]) {
   if (name !== undefined && !TICKET_SESSION.test(name)) {
     console.error(`${name} is not a ticket session name, <repo>-t<n>`);
     process.exit(1);
   }
 }
-if (args.includes("--ci") || ciBranches?.length === 0) {
-  console.error("--ci needs the branches CI runs on, as --ci=<branch>,<branch>");
-  process.exit(1);
-}
 
 if (RELEASE) {
   rmSync(join(CLAIMS_DIR, RELEASE), { force: true });
+  process.exit(0);
+}
+
+if (LANDING) {
+  mkdirSync(LANDING_DIR, { recursive: true });
+  writeFileSync(join(LANDING_DIR, LANDING), "");
   process.exit(0);
 }
 
@@ -90,11 +96,27 @@ function liveClaims(running) {
   });
 }
 
-// Ticket sessions are named <repo>-t<n>. Every repo's, running or claimed, counts against the machine's limit; this
-// repo's against its own. The session being claimed is left out, so claiming it again refreshes its claim.
+// The sessions marked landing, pruning the marks of sessions no longer running: a closed session's name can come back
+// for a new ticket session.
+function landing(running) {
+  if (!existsSync(LANDING_DIR)) return new Set();
+  const marked = readdirSync(LANDING_DIR).filter((name) => {
+    if (running.has(name)) return true;
+    rmSync(join(LANDING_DIR, name), { force: true });
+    return false;
+  });
+  return new Set(marked);
+}
+
+// Ticket sessions are named <repo>-t<n>. Every repo's, running or claimed and not landing, counts against the
+// machine's limit; this repo's against its own. The session being claimed is left out, so claiming it again refreshes
+// its claim.
 function ticketSessions(repo) {
   const running = new Set(terminal.list().map(({ name }) => name).filter((name) => TICKET_SESSION.test(name)));
-  const all = [...new Set([...running, ...liveClaims(running)])].filter((name) => name !== CLAIM);
+  const landed = landing(running);
+  const all = [...new Set([...running, ...liveClaims(running)])].filter(
+    (name) => name !== CLAIM && !landed.has(name),
+  );
   const ofRepo = all.filter((name) => name.startsWith(`${repo}-t`) && /^\d+$/.test(name.slice(repo.length + 2)));
   return { machine: all.length, repo: ofRepo.length };
 }
@@ -107,26 +129,12 @@ function freeGiB() {
   return match ? Number(match[1]) / 1024 / 1024 : null;
 }
 
-// A ready pull request runs CI on every push; an in-progress issue will open one. Drafts skip CI.
-function ciInUse(branches) {
-  const readyPullRequests = JSON.parse(
-    run("gh", [
-      "pr",
-      "list",
-      "--state",
-      "open",
-      "--limit",
-      "1000",
-      "--json",
-      "isDraft,baseRefName",
-      "--jq",
-      `[.[] | select((.isDraft | not) and (.baseRefName | IN(${branches.map((b) => JSON.stringify(b)).join(", ")})))] | length`,
-    ]),
-  );
-  const inProgress = JSON.parse(
-    run("gh", ["issue", "list", "--state", "open", "--label", "in-progress", "--json", "number", "--jq", "length"]),
-  );
-  return readyPullRequests + inProgress;
+// The repo's workflow runs waiting for a runner or on one, anyone's, from any machine. An open pull request that
+// nothing pushes to costs nothing, so it doesn't count.
+function ciInUse() {
+  const count = (status) =>
+    Number(run("gh", ["api", `repos/{owner}/{repo}/actions/runs?status=${status}&per_page=1`, "--jq", ".total_count"]));
+  return count("queued") + count("in_progress");
 }
 
 function capacity(repo) {
@@ -143,8 +151,8 @@ function capacity(repo) {
     },
     memory: free === null ? "unchecked" : { freeGiB: Number(free.toFixed(1)), minFreeGiB: config.machine.minFreeGiB },
   };
-  if (ciBranches?.length) {
-    const used = ciInUse(ciBranches);
+  if (CI) {
+    const used = ciInUse();
     slots = Math.min(slots, Math.max(0, config.repo.ciCap - used));
     report.ci = { used, cap: config.repo.ciCap };
   }
