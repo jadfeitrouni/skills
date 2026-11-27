@@ -100,29 +100,57 @@ End with a one-line summary: total findings per axis, and the worst issue _withi
 
 ### 6. Act on the findings
 
-When the findings are acted on, by you or by the skill that ran this review, their kind decides what happens:
+When the findings are acted on, by you or by the skill that ran this review, each one gets exactly one outcome:
 
-- **Hard**, and **Judgement** whose fix is **contained**: fix it. A contained fix adds no type, file, layer or shared
-  interface, and edits only files the change already touches: a rename, an inlined helper, a duplicate folded into
-  one. When the finding is wrong, the reviewer having misread the code or the spec, or a documented repo standard
-  endorsing what the smell flags, mark it **Disputed** and quote the code, spec or standard that contradicts it, for
-  the user to decide.
-- **Judgement** whose fix is structural, any fix that is not contained: leave the code as it is and mark it
-  **Proposed**, with the fix you would make and what that fix would add: new types, files or layers, and the call
-  sites it touches. Fix it only once the user picks it.
+- **Fixed** is the default, for Hard and Judgement findings alike, however far the fix reaches. Fix it.
+- **Proposed**, for a Judgement finding whose fix trips a **stop reason**. Leave the code as it is: the user decides.
+  - The fix adds complexity: more concepts (types, files, layers, branches, config, migrations, dependencies) than it
+    removes.
+  - The fix leaves the code worse: a workaround, a leaky abstraction, new duplication.
+  - The trade-off isn't worth it: the fix's risk (a behaviour change, a shared interface, a path the repo's risk rule
+    in `docs/agents/triage-labels.md` names) plus its complexity outweighs what it fixes.
+  - The fix is an action outside the code: a long run, rewritten history.
 
-Then report every finding as one table, a row each, in review order:
+  Give the fix you would make, then one line on what fixing costs and one on what leaving it costs.
+- **Disputed**, when the finding is wrong: the reviewer misread the code or the spec, or a documented repo standard
+  endorses what it flags. Quote the code, spec or standard that contradicts it. A dispute stands on its own; the
+  report shows it.
+
+A finding that is right but reaches past the change is not a dispute: route it as a follow-up, below. When it concerns
+security, a quota, an API contract or stored data, it is **Proposed** instead, offered as "fix now or file an issue".
+
+#### Follow-ups
+
+A follow-up is work the change surfaced beyond its findings: from the review, or met while building it. Route each one:
+
+- **In the branch**, then **Fixed**: a small or medium defect or cleanup in the ticket's area, or something the change
+  made stale, in any file. On work the risk rule calls low-risk, only where that rule still allows it. Name edits on
+  the rule's excluded paths under Merge Danger when the pull request opens.
+- **On the sibling ticket**, then **Filed**: an open ticket owns it. Comment there; this needs no one's leave.
+- **A new issue**, then **Filed**: a flaky test outside the change, a large feature, new tooling or infrastructure, an
+  API contract change, or work that must wait for a deploy or another merge. File it for triage, as
+  `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md` describe.
+- **Proposed**, defaulting to drop: you doubt it is a real problem. Ask in one line.
+
+Steps only the user can take (a secret, a remote migration, a check on a device) are not follow-ups: they go under
+**Your steps** in the report.
+
+#### The report
+
+Report every finding and follow-up as one table, a row each, findings in review order, then follow-ups as F1, F2…:
 
 | # | Kind | Finding | Outcome |
 |---|---|---|---|
 | S1 | Hard | `orders/api.ts` types the response as `any`, which `CODING_STANDARDS.md` forbids. | Fixed: typed as `OrderResponse`. |
-| S2 | Judgement | `price`, `currency` and `taxRate` travel together through four functions in `checkout/` (Data Clumps). | Proposed: a `Money` type. Adds one type and changes four signatures. |
+| S2 | Judgement | `price`, `currency` and `taxRate` travel together through four functions in `checkout/` (Data Clumps). | Proposed: a `Money` type across four signatures. Fixing: one type for three values used only here. Leaving: three parameters stay in step by hand. |
 | S3 | Judgement | `checkout/cart.ts` names the discounted subtotal `tmp2`, which hides what it holds (Mysterious Name). | Fixed: renamed `discountedSubtotal`. |
 | P1 | Hard | The spec rejects refunds after 30 days; `refunds.ts` accepts them. | Fixed: `refunds.ts` rejects them. |
+| F1 | Follow-up | `invoices/pdf.ts` still formats prices by hand, which the change made stale. | Fixed: uses `formatPrice`. |
 
-Write each finding so someone who has seen neither the diff nor the review can decide on it: what is wrong, where
-(file and function), and why it matters. Name the code rather than quoting it. Each outcome starts with **Fixed**,
-saying what changed, **Disputed** or **Proposed**.
+Write each row so someone who has seen neither the diff nor the review can decide on it: what is wrong, where (file
+and function), and why it matters. Name the code rather than quoting it. Each outcome starts with **Fixed**, saying
+what changed, **Proposed**, **Disputed** or **Filed**, with the link. Under the table, write "No follow-ups" when
+there are none, then the **Your steps** list, "None" when it is empty.
 
 ## Why two axes
 
